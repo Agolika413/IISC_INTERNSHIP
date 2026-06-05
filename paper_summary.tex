@@ -1,0 +1,104 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{bm}
+
+\geometry{
+    top=1in,
+    bottom=1in,
+    left=1in,
+    right=1in
+}
+
+\title{\textbf{Understanding the Adaptive Fault-Tolerant Sliding Mode Control Allocation Scheme for an Octorotor}}
+\author{Agolika \\ IISc Internship Report}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This report summarizes the theoretical framework and implementation details of an Adaptive Fault-Tolerant Sliding Mode Control (ASMC) scheme designed for multirotor helicopters (specifically a coaxial octorotor) subject to simultaneous actuator faults. The methodology decouples the control problem into a high-level sliding mode controller generating virtual control efforts, and a low-level control allocation module distributing these efforts to the actuators.
+\end{abstract}
+
+\section{Introduction}
+Multirotor unmanned aerial vehicles (UAVs) are highly nonlinear, underactuated systems. A coaxial octorotor provides hardware redundancy, allowing it to maintain stability and continue its mission even when multiple actuators fail simultaneously. Traditional PID controllers struggle with the severe dynamic coupling and rapid loss of authority caused by sudden motor failures. The reviewed paper proposes a robust Adaptive Sliding Mode Controller (ASMC) combined with a Control Allocation (CA) algorithm to maintain stable flight despite severe fault conditions.
+
+\section{Octorotor Mathematical Model}
+
+\subsection{Rigid Body Dynamics}
+The octorotor is modeled as a 6 Degree of Freedom (DoF) rigid body. Let $\bm{\eta} = [x, y, z]^T$ represent the position in the inertial frame, and $\bm{\Theta} = [\phi, \theta, \psi]^T$ represent the Euler angles (roll, pitch, yaw). The translational and rotational dynamics are given by:
+\begin{align}
+    \ddot{x} &= (\cos\phi\sin\theta\cos\psi + \sin\phi\sin\psi) \frac{U_z}{m} - \frac{K_{dx}}{m}\dot{x} \\
+    \ddot{y} &= (\cos\phi\sin\theta\sin\psi - \sin\phi\cos\psi) \frac{U_z}{m} - \frac{K_{dy}}{m}\dot{y} \\
+    \ddot{z} &= (\cos\phi\cos\theta) \frac{U_z}{m} - g - \frac{K_{dz}}{m}\dot{z}
+\end{align}
+where $m$ is the mass, $g$ is gravity, $K_{di}$ are drag coefficients, and $U_z$ is the total vertical thrust.
+
+The rotational dynamics are expressed as:
+\begin{align}
+    \ddot{\phi} &= \dot{\theta}\dot{\psi} \frac{I_{yy} - I_{zz}}{I_{xx}} + \frac{U_\phi}{I_{xx}} - \frac{K_{d\phi} L}{I_{xx}}\dot{\phi} \\
+    \ddot{\theta} &= \dot{\phi}\dot{\psi} \frac{I_{zz} - I_{xx}}{I_{yy}} + \frac{U_\theta}{I_{yy}} - \frac{K_{d\theta} L}{I_{yy}}\dot{\theta} \\
+    \ddot{\psi} &= \dot{\phi}\dot{\theta} \frac{I_{xx} - I_{yy}}{I_{zz}} + \frac{U_\psi}{I_{zz}} - \frac{K_{d\psi}}{I_{zz}}\dot{\psi}
+\end{align}
+where $I_{xx}, I_{yy}, I_{zz}$ are moments of inertia, $L$ is the arm length, and $U_\phi, U_\theta, U_\psi$ are the control torques (roll, pitch, yaw).
+
+\subsection{Actuator Fault Modeling}
+To represent actuator degradation or total failure, a fault parameter matrix $\bm{L}$ is introduced. For an octorotor with 8 motors:
+\begin{equation}
+    \bm{L} = \text{diag}(l_1, l_2, \dots, l_8)
+\end{equation}
+where $0 \leq l_i \leq 1$. A value of $l_i = 1$ indicates a perfectly healthy motor, while $l_i = 0$ indicates complete failure. The actual thrust produced by the actuators becomes $\bm{u}_{act} = \bm{L} \bm{u}_{cmd}$, where $\bm{u}_{cmd}$ is the commanded thrust vector.
+
+\section{Adaptive Sliding Mode Control (ASMC)}
+The high-level controller treats the system as fully actuated with virtual inputs $\bm{\nu} = [U_z, U_\phi, U_\theta, U_\psi]^T$.
+
+\subsection{Sliding Surface Design}
+A PID-type sliding surface is defined to ensure asymptotic convergence of the tracking error $\bm{e} = \bm{x} - \bm{x}_d$:
+\begin{equation}
+    \bm{s} = \dot{\bm{e}} + K_2 \bm{e} + K_1 \int \bm{e} \, dt
+\end{equation}
+where $K_1$ and $K_2$ are positive definite gain matrices. 
+
+\subsection{Adaptive Control Law}
+To counteract unknown bounds of uncertainties and faults without prior knowledge, adaptive gains $\hat{\bm{G}}$ are updated in real-time. The control law is formulated as:
+\begin{equation}
+    \bm{\nu} = \hat{\bm{G}} \bm{f}_{eq} - \hat{\bm{G}} K_S \text{sat}\left(\frac{\bm{s}}{\Phi}\right)
+\end{equation}
+where $\bm{f}_{eq}$ cancels known dynamics, $K_S$ governs the reaching speed, and $\text{sat}(\cdot)$ prevents high-frequency chattering by defining a boundary layer $\Phi$. The adaptive gains evolve according to:
+\begin{equation}
+    \dot{\hat{\bm{G}}} = \Gamma \bm{\nu}_{ideal} \bm{s}_\Delta
+\end{equation}
+This allows the controller to dynamically amplify its commands when an actuator weakens.
+
+\section{Control Allocation (CA)}
+The virtual control $\bm{\nu}$ must be distributed to the 8 physical motors. The mapping is linear:
+\begin{equation}
+    \bm{\nu} = B_a \bm{u}
+\end{equation}
+where $B_a \in \mathbb{R}^{4 \times 8}$ is the control effectiveness matrix mapping motor forces to $[Z, Roll, Pitch, Yaw]$. 
+
+Because the octorotor has 8 motors and only 4 controlled degrees of freedom, the system is over-actuated. To find the optimal motor commands $\bm{u}$ while minimizing energy and obeying physical thrust limits, the Moore-Penrose Pseudo-Inverse is utilized:
+\begin{equation}
+    \bm{u} = B_a^\dagger \bm{\nu} = B_a^T (B_a B_a^T)^{-1} \bm{\nu}
+\end{equation}
+When faults occur ($\bm{L}$ changes), the effective allocation matrix becomes $B_{eff} = B_a \bm{L}$.
+
+\section{Implementation Insights \& Physics Verification}
+During the porting of this mathematical framework to a rigorous rigid-body physics engine (Gazebo Harmonic), several critical physics observations were made:
+\begin{itemize}
+    \item \textbf{Mathematical Scaling:} Unlike pure numerical simulations, physical engines require precise mapping between abstract control outputs and physical forces. Outputting the raw ASMC variable without adjusting for mass/inertia scaling causes total loss of attitude authority (as torques scale disproportionately to thrust).
+    \item \textbf{Integral Windup:} Aerodynamic drag and response delays naturally present in Gazebo can cause the integral error term in the ASMC to accumulate rapidly. Without strict anti-windup clamping and bleed-off, the controller demands maximum yaw torques, subsequently starving vertical thrust and destabilizing the system.
+    \item \textbf{Motor Conversion:} Gazebo's Multicopter Motor Plugin accepts angular velocity commands ($\omega$). Thus, the final allocated thrust $\bm{u}_i$ must be transformed via $\omega_i = \sqrt{u_i / C_T}$.
+\end{itemize}
+
+\section{Conclusion}
+The ASMC scheme with a dynamic Control Allocation successfully tolerates simultaneous multi-actuator faults. By continuously adapting its control effort boundaries without requiring explicit Fault Detection and Isolation (FDI) measurements, the system guarantees that tracking errors remain bounded inside a small boundary layer, even when up to two actuators fail simultaneously.
+
+\end{document}
