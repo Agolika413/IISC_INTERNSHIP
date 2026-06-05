@@ -1,0 +1,330 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="octorotor">
+    <pose>0 0 0.05 0 0 0</pose>
+    
+    <link name="base_link">
+      <inertial>
+        <mass>2.0</mass>
+        <inertia>
+          <ixx>0.0820</ixx><iyy>0.0845</iyy><izz>0.1377</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      
+      <collision name="base_link_collision">
+        <geometry><cylinder><radius>0.12</radius><length>0.08</length></cylinder></geometry>
+      </collision>
+
+      <!-- Center Body (Sleek Black Hexagon or Cylinder) -->
+      <visual name="base_link_visual">
+        <geometry><cylinder><radius>0.12</radius><length>0.08</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse><specular>0.5 0.5 0.5 1</specular></material>
+      </visual>
+
+      <!-- Arm Front (+x) -->
+      <visual name="arm_front">
+        <pose>0.115 0 0 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.23</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.2 0.2 0.2 1</diffuse></material>
+      </visual>
+      <!-- Arm Right (+y) -->
+      <visual name="arm_right">
+        <pose>0 0.115 0 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.23</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.2 0.2 0.2 1</diffuse></material>
+      </visual>
+      <!-- Arm Rear (-x) -->
+      <visual name="arm_rear">
+        <pose>-0.115 0 0 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.23</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.2 0.2 0.2 1</diffuse></material>
+      </visual>
+      <!-- Arm Left (-y) -->
+      <visual name="arm_left">
+        <pose>0 -0.115 0 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.23</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.2 0.2 0.2 1</diffuse></material>
+      </visual>
+    </link>
+
+    <!-- ===================== ROTOR 0: Front-Upper (CW) ===================== -->
+    <link name="rotor_0">
+      <pose>0.23 0 0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_0_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_cw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_0_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_0</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_0_joint</jointName>
+      <linkName>rotor_0</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>0</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <!-- ===================== ROTOR 1: Front-Lower (CCW) ===================== -->
+    <link name="rotor_1">
+      <pose>0.23 0 -0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_1_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_ccw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_1_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_1</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_1_joint</jointName>
+      <linkName>rotor_1</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>1</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <!-- ===================== ROTOR 2: Right-Upper (CCW) ===================== -->
+    <link name="rotor_2">
+      <pose>0 0.23 0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_2_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_ccw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_2_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_2</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_2_joint</jointName>
+      <linkName>rotor_2</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>2</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <!-- ===================== ROTOR 3: Right-Lower (CW) ===================== -->
+    <link name="rotor_3">
+      <pose>0 0.23 -0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_3_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_cw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_3_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_3</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_3_joint</jointName>
+      <linkName>rotor_3</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>3</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <!-- ===================== ROTOR 4: Rear-Upper (CW) ===================== -->
+    <link name="rotor_4">
+      <pose>-0.23 0 0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_4_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_cw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_4_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_4</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_4_joint</jointName>
+      <linkName>rotor_4</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>4</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <!-- ===================== ROTOR 5: Rear-Lower (CCW) ===================== -->
+    <link name="rotor_5">
+      <pose>-0.23 0 -0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_5_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_ccw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_5_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_5</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_5_joint</jointName>
+      <linkName>rotor_5</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>5</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <!-- ===================== ROTOR 6: Left-Upper (CCW) ===================== -->
+    <link name="rotor_6">
+      <pose>0 -0.23 0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_6_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_ccw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_6_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_6</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_6_joint</jointName>
+      <linkName>rotor_6</linkName>
+      <turningDirection>ccw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>6</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <!-- ===================== ROTOR 7: Left-Lower (CW) ===================== -->
+    <link name="rotor_7">
+      <pose>0 -0.23 -0.05 0 0 0</pose>
+      <inertial><mass>0.005</mass><inertia><ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz></inertia></inertial>
+      <visual name="rotor_7_visual">
+        <geometry>
+          <mesh>
+            <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/X3 UAV/4/files/meshes/propeller_cw.dae</uri>
+            <scale>0.1 0.1 0.1</scale>
+          </mesh>
+        </geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><specular>1 1 1 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_7_joint" type="revolute">
+      <parent>base_link</parent><child>rotor_7</child>
+      <axis><xyz>0 0 1</xyz></axis>
+    </joint>
+    <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">
+      <jointName>rotor_7_joint</jointName>
+      <linkName>rotor_7</linkName>
+      <turningDirection>cw</turningDirection>
+      <timeConstantUp>0.0125</timeConstantUp>
+      <timeConstantDown>0.025</timeConstantDown>
+      <maxRotVelocity>2000</maxRotVelocity>
+      <motorConstant>2.8e-06</motorConstant>
+      <momentConstant>0.026785714285714284</momentConstant>
+      <commandSubTopic>command/motor_speed</commandSubTopic>
+      <motorNumber>7</motorNumber>
+      <rotorDragCoefficient>8.06428e-05</rotorDragCoefficient>
+      <rollingMomentCoefficient>1e-06</rollingMomentCoefficient>
+      <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
+    </plugin>
+
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <odom_publish_frequency>200</odom_publish_frequency>
+      <odom_topic>/model/octorotor/odometry</odom_topic>
+    </plugin>
+  </model>
+</sdf>

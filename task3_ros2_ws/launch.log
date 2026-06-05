@@ -1,0 +1,17 @@
+[INFO] [launch]: All log files can be found below /home/agolika/.ros/log/2026-06-04-18-36-38-875026-LAPTOP-TAQNSDCF-4730
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gazebo-1]: process started with pid [4741]
+[INFO] [parameter_bridge-2]: process started with pid [4742]
+[INFO] [asmc_node-3]: process started with pid [4743]
+[INFO] [ca_node-4]: process started with pid [4745]
+[INFO] [fault_injector-5]: process started with pid [4746]
+[parameter_bridge-2] [INFO] [1780598203.743678734] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/model/octorotor/odometry (gz.msgs.Odometry) -> /model/octorotor/odometry (nav_msgs/msg/Odometry)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.747955407] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/clock (gz.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.749197368] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_0 (std_msgs/msg/Float64) -> /motor_speed_0 (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.750668222] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_1 (std_msgs/msg/Float64) -> /motor_speed_1 (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.751367437] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_2 (std_msgs/msg/Float64) -> /motor_speed_2 (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.751984435] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_3 (std_msgs/msg/Float64) -> /motor_speed_3 (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.752557968] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_4 (std_msgs/msg/Float64) -> /motor_speed_4 (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.753255184] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_5 (std_msgs/msg/Float64) -> /motor_speed_5 (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.753902983] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_6 (std_msgs/msg/Float64) -> /motor_speed_6 (gz.msgs.Double)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1780598203.754613977] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/motor_speed_7 (std_msgs/msg/Float64) -> /motor_speed_7 (gz.msgs.Double)] (Lazy 0)

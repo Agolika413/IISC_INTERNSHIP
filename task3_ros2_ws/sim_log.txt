@@ -1,0 +1,2 @@
+[INFO] [launch]: All log files can be found below /home/agolika/.ros/log/2026-06-04-18-51-35-844764-LAPTOP-TAQNSDCF-5644
+[INFO] [launch]: Default logging verbosity is set to INFO
