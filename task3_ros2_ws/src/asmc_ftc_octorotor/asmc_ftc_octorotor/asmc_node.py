@@ -94,7 +94,8 @@ class ASMCNode(Node):
         
         for i in range(4):
             if abs(e[i]) < 0.5: self.ie[i] += e[i] * self.dt
-            self.ie[i] = np.clip(self.ie[i], -2.0, 2.0)
+            self.ie[i] *= 0.99  # bleed off integral to prevent permanent windup
+            self.ie[i] = np.clip(self.ie[i], -0.2, 0.2)
             
         sig = ed + self.K2*e + self.K1*self.ie
         
@@ -118,10 +119,11 @@ class ASMCNode(Node):
         nu = self.Gh * ff - self.Gh * self.KS * self.sat(sig)
         
         msg = Wrench()
-        msg.force.z = float(np.clip(nu[0] * self.m, 5.0, 35.0))
-        msg.torque.x = float(np.clip(nu[1] * self.Ixx, -1.0, 1.0))
-        msg.torque.y = float(np.clip(nu[2] * self.Iyy, -1.0, 1.0))
-        msg.torque.z = float(np.clip(nu[3] * self.Izz, -0.2, 0.2))
+        msg.force.z = float(np.clip(nu[0], 5.0, 35.0))
+        # Strictly limit torques so they don't starve thrust for other axes
+        msg.torque.x = float(np.clip(nu[1], -0.5, 0.5))
+        msg.torque.y = float(np.clip(nu[2], -0.5, 0.5))
+        msg.torque.z = float(np.clip(nu[3], -0.05, 0.05))
         self.cmd_pub.publish(msg)
 
 def main(args=None):
