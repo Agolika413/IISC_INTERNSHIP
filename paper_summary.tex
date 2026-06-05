@@ -1,104 +1,95 @@
 \documentclass[12pt, a4paper]{article}
 
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{amsmath, amssymb}
 \usepackage{graphicx}
 \usepackage{geometry}
-\usepackage{hyperref}
-\usepackage{float}
-\usepackage{bm}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, positioning}
 
-\geometry{
-    top=1in,
-    bottom=1in,
-    left=1in,
-    right=1in
-}
+\geometry{top=1in, bottom=1in, left=1in, right=1in}
 
-\title{\textbf{Understanding the Adaptive Fault-Tolerant Sliding Mode Control Allocation Scheme for an Octorotor}}
-\author{Agolika \\ IISc Internship Report}
+\title{\textbf{Adaptive Fault-Tolerant Control of an Octorotor \\ Paper Understanding Report}}
+\author{Agolika \\ IISc Internship}
 \date{\today}
 
 \begin{document}
 
 \maketitle
 
-\begin{abstract}
-This report summarizes the theoretical framework and implementation details of an Adaptive Fault-Tolerant Sliding Mode Control (ASMC) scheme designed for multirotor helicopters (specifically a coaxial octorotor) subject to simultaneous actuator faults. The methodology decouples the control problem into a high-level sliding mode controller generating virtual control efforts, and a low-level control allocation module distributing these efforts to the actuators.
-\end{abstract}
-
 \section{Introduction}
-Multirotor unmanned aerial vehicles (UAVs) are highly nonlinear, underactuated systems. A coaxial octorotor provides hardware redundancy, allowing it to maintain stability and continue its mission even when multiple actuators fail simultaneously. Traditional PID controllers struggle with the severe dynamic coupling and rapid loss of authority caused by sudden motor failures. The reviewed paper proposes a robust Adaptive Sliding Mode Controller (ASMC) combined with a Control Allocation (CA) algorithm to maintain stable flight despite severe fault conditions.
+The paper addresses the challenge of keeping an 8-rotor drone (coaxial octorotor) flying safely even when multiple motors fail at the same time. Instead of relying on a separate system to detect and isolate faults (which is slow and complex), the paper uses a robust approach: an \textbf{Adaptive Sliding Mode Controller (ASMC)} to handle uncertainty, paired with a \textbf{Control Allocation} strategy to dynamically distribute the required effort across the remaining healthy motors.
 
-\section{Octorotor Mathematical Model}
+\section{System Architecture: Inputs, Outputs, and States}
+To understand the system, we must define what the controller "sees" and "commands".
 
-\subsection{Rigid Body Dynamics}
-The octorotor is modeled as a 6 Degree of Freedom (DoF) rigid body. Let $\bm{\eta} = [x, y, z]^T$ represent the position in the inertial frame, and $\bm{\Theta} = [\phi, \theta, \psi]^T$ represent the Euler angles (roll, pitch, yaw). The translational and rotational dynamics are given by:
-\begin{align}
-    \ddot{x} &= (\cos\phi\sin\theta\cos\psi + \sin\phi\sin\psi) \frac{U_z}{m} - \frac{K_{dx}}{m}\dot{x} \\
-    \ddot{y} &= (\cos\phi\sin\theta\sin\psi - \sin\phi\cos\psi) \frac{U_z}{m} - \frac{K_{dy}}{m}\dot{y} \\
-    \ddot{z} &= (\cos\phi\cos\theta) \frac{U_z}{m} - g - \frac{K_{dz}}{m}\dot{z}
-\end{align}
-where $m$ is the mass, $g$ is gravity, $K_{di}$ are drag coefficients, and $U_z$ is the total vertical thrust.
+\subsection{State Vector}
+The state of the drone describes its position and orientation in 3D space. It is represented by an 8-dimensional vector:
+\[
+\mathbf{X} = [z, \dot{z}, \phi, \dot{\phi}, \theta, \dot{\theta}, \psi, \dot{\psi}]^T
+\]
+where $z$ is altitude, and $\phi, \theta, \psi$ are the roll, pitch, and yaw angles (with their respective velocities). 
 
-The rotational dynamics are expressed as:
-\begin{align}
-    \ddot{\phi} &= \dot{\theta}\dot{\psi} \frac{I_{yy} - I_{zz}}{I_{xx}} + \frac{U_\phi}{I_{xx}} - \frac{K_{d\phi} L}{I_{xx}}\dot{\phi} \\
-    \ddot{\theta} &= \dot{\phi}\dot{\psi} \frac{I_{zz} - I_{xx}}{I_{yy}} + \frac{U_\theta}{I_{yy}} - \frac{K_{d\theta} L}{I_{yy}}\dot{\theta} \\
-    \ddot{\psi} &= \dot{\phi}\dot{\theta} \frac{I_{xx} - I_{yy}}{I_{zz}} + \frac{U_\psi}{I_{zz}} - \frac{K_{d\psi}}{I_{zz}}\dot{\psi}
-\end{align}
-where $I_{xx}, I_{yy}, I_{zz}$ are moments of inertia, $L$ is the arm length, and $U_\phi, U_\theta, U_\psi$ are the control torques (roll, pitch, yaw).
-
-\subsection{Actuator Fault Modeling}
-To represent actuator degradation or total failure, a fault parameter matrix $\bm{L}$ is introduced. For an octorotor with 8 motors:
-\begin{equation}
-    \bm{L} = \text{diag}(l_1, l_2, \dots, l_8)
-\end{equation}
-where $0 \leq l_i \leq 1$. A value of $l_i = 1$ indicates a perfectly healthy motor, while $l_i = 0$ indicates complete failure. The actual thrust produced by the actuators becomes $\bm{u}_{act} = \bm{L} \bm{u}_{cmd}$, where $\bm{u}_{cmd}$ is the commanded thrust vector.
-
-\section{Adaptive Sliding Mode Control (ASMC)}
-The high-level controller treats the system as fully actuated with virtual inputs $\bm{\nu} = [U_z, U_\phi, U_\theta, U_\psi]^T$.
-
-\subsection{Sliding Surface Design}
-A PID-type sliding surface is defined to ensure asymptotic convergence of the tracking error $\bm{e} = \bm{x} - \bm{x}_d$:
-\begin{equation}
-    \bm{s} = \dot{\bm{e}} + K_2 \bm{e} + K_1 \int \bm{e} \, dt
-\end{equation}
-where $K_1$ and $K_2$ are positive definite gain matrices. 
-
-\subsection{Adaptive Control Law}
-To counteract unknown bounds of uncertainties and faults without prior knowledge, adaptive gains $\hat{\bm{G}}$ are updated in real-time. The control law is formulated as:
-\begin{equation}
-    \bm{\nu} = \hat{\bm{G}} \bm{f}_{eq} - \hat{\bm{G}} K_S \text{sat}\left(\frac{\bm{s}}{\Phi}\right)
-\end{equation}
-where $\bm{f}_{eq}$ cancels known dynamics, $K_S$ governs the reaching speed, and $\text{sat}(\cdot)$ prevents high-frequency chattering by defining a boundary layer $\Phi$. The adaptive gains evolve according to:
-\begin{equation}
-    \dot{\hat{\bm{G}}} = \Gamma \bm{\nu}_{ideal} \bm{s}_\Delta
-\end{equation}
-This allows the controller to dynamically amplify its commands when an actuator weakens.
-
-\section{Control Allocation (CA)}
-The virtual control $\bm{\nu}$ must be distributed to the 8 physical motors. The mapping is linear:
-\begin{equation}
-    \bm{\nu} = B_a \bm{u}
-\end{equation}
-where $B_a \in \mathbb{R}^{4 \times 8}$ is the control effectiveness matrix mapping motor forces to $[Z, Roll, Pitch, Yaw]$. 
-
-Because the octorotor has 8 motors and only 4 controlled degrees of freedom, the system is over-actuated. To find the optimal motor commands $\bm{u}$ while minimizing energy and obeying physical thrust limits, the Moore-Penrose Pseudo-Inverse is utilized:
-\begin{equation}
-    \bm{u} = B_a^\dagger \bm{\nu} = B_a^T (B_a B_a^T)^{-1} \bm{\nu}
-\end{equation}
-When faults occur ($\bm{L}$ changes), the effective allocation matrix becomes $B_{eff} = B_a \bm{L}$.
-
-\section{Implementation Insights \& Physics Verification}
-During the porting of this mathematical framework to a rigorous rigid-body physics engine (Gazebo Harmonic), several critical physics observations were made:
+\subsection{Inputs and Outputs}
+The control system operates in two stages, creating distinct sets of inputs and outputs:
 \begin{itemize}
-    \item \textbf{Mathematical Scaling:} Unlike pure numerical simulations, physical engines require precise mapping between abstract control outputs and physical forces. Outputting the raw ASMC variable without adjusting for mass/inertia scaling causes total loss of attitude authority (as torques scale disproportionately to thrust).
-    \item \textbf{Integral Windup:} Aerodynamic drag and response delays naturally present in Gazebo can cause the integral error term in the ASMC to accumulate rapidly. Without strict anti-windup clamping and bleed-off, the controller demands maximum yaw torques, subsequently starving vertical thrust and destabilizing the system.
-    \item \textbf{Motor Conversion:} Gazebo's Multicopter Motor Plugin accepts angular velocity commands ($\omega$). Thus, the final allocated thrust $\bm{u}_i$ must be transformed via $\omega_i = \sqrt{u_i / C_T}$.
+    \item \textbf{Virtual Control Inputs ($\nu$):} The high-level ASMC calculates the total forces needed to stabilize the drone. This is a 4-dimensional vector: $\nu = [U_z, U_\phi, U_\theta, U_\psi]^T$ (Total Thrust, Roll Torque, Pitch Torque, Yaw Torque).
+    \item \textbf{Actual Motor Commands ($u$):} The low-level Control Allocation module takes the 4 virtual inputs and converts them into 8 individual motor thrust commands: $u = [u_1, u_2, \dots, u_8]^T$.
+    \item \textbf{System Output ($y$):} The physical response of the drone (Altitude and Attitude), which is fed back into the controller to close the loop.
+\end{itemize}
+
+\section{Closed-Loop System Diagram}
+
+Below is the closed-loop control architecture representing the paper's methodology:
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[auto, node distance=2cm, >=latex']
+        % Define block styles
+        \tikzstyle{block} = [draw, fill=blue!10, rectangle, minimum height=3em, minimum width=4em, text centered, rounded corners]
+        \tikzstyle{sum} = [draw, fill=blue!10, circle, node distance=1.5cm]
+        \tikzstyle{input} = [coordinate]
+        \tikzstyle{output} = [coordinate]
+        
+        % Nodes
+        \node [input, name=ref] {};
+        \node [sum, right of=ref] (sum) {};
+        \node [block, right of=sum, node distance=2.5cm] (asmc) {ASMC};
+        \node [block, right of=asmc, node distance=3.5cm] (ca) {Control Allocation};
+        \node [block, right of=ca, node distance=3cm] (faults) {Motor Faults ($L$)};
+        \node [block, right of=faults, node distance=3.5cm, align=center] (drone) {Octorotor \\ Dynamics};
+        \node [output, right of=drone, node distance=2cm] (out) {};
+        \node [coordinate, below of=ca, node distance=2cm] (feedback) {};
+
+        % Edges
+        \draw [->] (ref) -- node {$X_{des}$} (sum);
+        \draw [->] (sum) -- node {Error ($e$)} (asmc);
+        \draw [->] (asmc) -- node {Virtual $\nu$} (ca);
+        \draw [->] (ca) -- node {Cmd $u$} (faults);
+        \draw [->] (faults) -- node {Actual $u_{act}$} (drone);
+        \draw [->] (drone) -- node [name=y] {State $X$} (out);
+        \draw [->] (y) |- (feedback) -| node[pos=0.99] {$-$} (sum);
+    \end{tikzpicture}
+    \caption{Adaptive Fault-Tolerant Control Architecture}
+\end{figure}
+
+\section{Understanding the Control Strategy}
+
+\subsection{The Adaptive Sliding Mode Controller (ASMC)}
+Sliding Mode Control (SMC) is a nonlinear control method that forces a system to "slide" along a defined mathematical surface (the sliding surface) towards zero error. 
+\begin{itemize}
+    \item \textbf{The Control Law:} The control law is designed to push the drone towards this sliding surface. However, standard SMC requires exact knowledge of the drone's parameters and the exact bounds of any faults.
+    \item \textbf{The "Adaptive" Part:} Since we don't know when a motor will fail or how severe the failure will be, the controller uses adaptive gains ($\hat{G}$). If the tracking error increases (e.g., a motor suddenly dies), the adaptive gains automatically increase in real-time, amplifying the control effort until the drone stabilizes. Once stable, the adaptation stops.
+\end{itemize}
+
+\subsection{Control Allocation and Fault Tolerance}
+Because the octorotor has 8 motors but only 4 physical directions to control (Altitude, Roll, Pitch, Yaw), it is an \textit{over-actuated} system. The Control Allocation block acts as a smart distributor:
+\begin{itemize}
+    \item It uses a mathematical pseudo-inverse matrix to distribute the Virtual Inputs ($\nu$) across all 8 motors as evenly and efficiently as possible.
+    \item \textbf{Handling Faults:} When a motor loses power (represented by the fault matrix $L$), the drone naturally tilts. The ASMC detects this tilt as an error and demands a stronger corrective Virtual Input. The Control Allocation block then automatically shifts the workload to the remaining healthy motors, preventing the drone from crashing without ever needing to explicitly "know" which specific motor broke.
 \end{itemize}
 
 \section{Conclusion}
-The ASMC scheme with a dynamic Control Allocation successfully tolerates simultaneous multi-actuator faults. By continuously adapting its control effort boundaries without requiring explicit Fault Detection and Isolation (FDI) measurements, the system guarantees that tracking errors remain bounded inside a small boundary layer, even when up to two actuators fail simultaneously.
+By completely separating the High-Level control (figuring out what the drone \textit{should} do) from the Low-Level allocation (figuring out \textit{how} the motors should spin to achieve it), the paper provides a highly resilient system. The adaptive gains ensure that even under simultaneous and severe actuator faults, the drone can maintain its target altitude and orientation safely.
 
 \end{document}
